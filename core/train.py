@@ -91,6 +91,7 @@ def train_cs(net, netD, netG, criterion, criterionD, optimizer, optimizerD, opti
         x, y = net(fake, True, 1 * torch.ones(data.shape[0], dtype=torch.long).cuda())
         errG_F = criterion.fake_loss(x).mean()
         generator_loss = errG + options['beta'] * errG_F
+
         generator_loss.backward()
         optimizerG.step()
 
@@ -104,6 +105,7 @@ def train_cs(net, netD, netG, criterion, criterionD, optimizer, optimizerD, opti
         # cross entropy loss
         optimizer.zero_grad()
         x, y = net(data, True, 0 * torch.ones(data.shape[0], dtype=torch.long).cuda())
+
         _, loss = criterion(x, y, labels)
 
         # KL divergence

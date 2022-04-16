@@ -21,6 +21,7 @@ import datasets.datasets as datasets
 from models.models import ConvNet
 from models.resnet import ResNet34
 from models.resnetABN import resnet34ABN
+from models.models import classifier32ABN
 from models import gan
 from utils import Logger, save_networks, save_GAN, load_networks, mkdir_if_missing
 from core import train, train_cs, test
@@ -38,9 +39,9 @@ parser.add_argument('--workers', default=4, type=int,
 
 # optimization
 parser.add_argument('--batch-size', type=int, default=128)
-parser.add_argument('--lr', type=float, default=0.0001, help="learning rate for model")
+parser.add_argument('--lr', type=float, default=0.01, help="learning rate for model")
 parser.add_argument('--gan_lr', type=float, default=0.0002, help="learning rate for gan")
-parser.add_argument('--max-epoch', type=int, default=100)
+parser.add_argument('--max-epoch', type=int, default=200)
 parser.add_argument('--stepsize', type=int, default=30)
 parser.add_argument('--temp', type=float, default=1.0, help="temp")
 parser.add_argument('--loss', type=str, default='ARPLoss')
@@ -72,7 +73,8 @@ def main():
     use_gpu = torch.cuda.is_available()
     if options['use_cpu']: use_gpu = False
 
-    feat_dim = 2 if 'cnn' in options['model'] else 512
+    # feat_dim = 2 if 'cnn' in options['model'] else 512
+    feat_dim = 128
 
     options.update(
         {
@@ -102,7 +104,7 @@ def main():
 
     print("Creating model: {}".format(options['model']))
     if 'cnn' in options['model']:
-        net = ConvNet(num_classes=dataset.num_classes)
+        net = classifier32ABN(num_classes=dataset.num_classes)
     else:
         if options['cs']:
             net = resnet34ABN(num_classes=dataset.num_classes, num_bns=2)
@@ -120,7 +122,6 @@ def main():
 
     Loss = importlib.import_module('loss.'+options['loss'])
     criterion = getattr(Loss, options['loss'])(**options)
-
     if use_gpu:
         net = nn.DataParallel(net, device_ids=[i for i in range(len(options['gpu'].split(',')))]).cuda()
         criterion = criterion.cuda()
